@@ -153,7 +153,9 @@ app.put('/api/_manage/endpoints/:id', (req, res) => {
 
   // Validate JSON body
   try {
-    JSON.parse(body);
+    if (body != "") {
+      JSON.parse(body);
+    }
   } catch (e) {
     return res.status(400).json({ error: 'Invalid JSON in response body' });
   }
