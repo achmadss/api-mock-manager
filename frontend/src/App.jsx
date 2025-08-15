@@ -342,7 +342,7 @@ const APIMockManager = () => {
                     type="text"
                     value={currentEndpoint.path}
                     onChange={(e) => setCurrentEndpoint({ ...currentEndpoint, path: e.target.value })}
-                    placeholder="${API_BASE_URL}/api/users?limit=10"
+                    placeholder="/api/users?limit=10"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
                   />
                 </div>
