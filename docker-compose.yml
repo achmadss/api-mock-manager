@@ -14,9 +14,11 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://host.docker.internal:3001}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://backend:3001}
       dockerfile: Dockerfile
     container_name: api-mock-frontend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     restart: unless-stopped
