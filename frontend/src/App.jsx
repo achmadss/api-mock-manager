@@ -3,6 +3,8 @@ import { Search, Plus, Edit2, Trash2, Save, X, Code, Copy, ExternalLink } from '
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
+console.log(API_BASE_URL)
+
 const APIMockManager = () => {
   const [endpoints, setEndpoints] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
