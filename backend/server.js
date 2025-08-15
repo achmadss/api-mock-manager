@@ -101,13 +101,15 @@ app.get('/api/_manage/endpoints', (req, res) => {
 app.post('/api/_manage/endpoints', (req, res) => {
   const { path: endpointPath, method, statusCode, body } = req.body;
 
-  if (!endpointPath || !method || !statusCode || !body) {
+  if (!endpointPath || !method || !statusCode) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   // Validate JSON body
   try {
-    JSON.parse(body);
+    if (!body) {
+      JSON.parse(body);
+    }
   } catch (e) {
     return res.status(400).json({ error: 'Invalid JSON in response body' });
   }

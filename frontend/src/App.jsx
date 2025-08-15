@@ -116,7 +116,7 @@ const APIMockManager = () => {
         : `${API_BASE_URL}/api/_manage/endpoints`;
 
       const method = editingEndpoint ? 'PUT' : 'POST';
-
+      
       const response = await fetch(url, {
         method,
         headers: {
