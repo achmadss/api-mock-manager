@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, Save, X, Code, Copy, ExternalLink } from 'lucide-react';
 
+const hostname = window.location.hostname;
+
 const APIMockManager = () => {
   const [endpoints, setEndpoints] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -263,7 +265,7 @@ const APIMockManager = () => {
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm text-gray-600">Mock URL:</span>
                           <code className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded font-mono">
-                            {API_BASE_URL}{endpoint.path}
+                            {hostname}{endpoint.path}
                           </code>
                         </div>
                         <div className="mt-3">
