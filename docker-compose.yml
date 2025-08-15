@@ -23,4 +23,4 @@ services:
       - "3000:80"
     restart: unless-stopped
     environment:
-      - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL:-http://backend:3001}
+      - REACT_APP_API_BASE_URL=http://backend:3001
