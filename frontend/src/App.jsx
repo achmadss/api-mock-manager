@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, Save, X, Code, Copy, ExternalLink } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-
-console.log(API_BASE_URL)
-
 const APIMockManager = () => {
   const [endpoints, setEndpoints] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +27,7 @@ const APIMockManager = () => {
   const loadEndpoints = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/_manage/endpoints`);
+      const response = await fetch(`/api/_manage/endpoints`);
       if (response.ok) {
         const data = await response.json();
         setEndpoints(data);
@@ -114,8 +110,8 @@ const APIMockManager = () => {
     setLoading(true);
     try {
       const url = editingEndpoint 
-        ? `${API_BASE_URL}/api/_manage/endpoints/${editingEndpoint}`
-        : `${API_BASE_URL}/api/_manage/endpoints`;
+        ? `/api/_manage/endpoints/${editingEndpoint}`
+        : `/api/_manage/endpoints`;
 
       const method = editingEndpoint ? 'PUT' : 'POST';
 
@@ -146,7 +142,7 @@ const APIMockManager = () => {
     if (confirm('Are you sure you want to delete this endpoint?')) {
       setLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/_manage/endpoints/${id}`, {
+        const response = await fetch(`/api/_manage/endpoints/${id}`, {
           method: 'DELETE'
         });
 
@@ -166,7 +162,7 @@ const APIMockManager = () => {
   };
 
   const copyEndpointURL = async (endpoint) => {
-    const url = `${API_BASE_URL}${endpoint.path}`;
+    const url = `${endpoint.path}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopySuccess(endpoint.id);
@@ -184,7 +180,7 @@ const APIMockManager = () => {
   };
 
   const testEndpoint = async (endpoint) => {
-    const url = `${API_BASE_URL}${endpoint.path}`;
+    const url = `${endpoint.path}`;
     window.open(url, '_blank');
   };
 

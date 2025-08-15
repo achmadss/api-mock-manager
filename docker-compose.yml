@@ -13,8 +13,6 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        API_NGINX_ENDPOINT: /api
       dockerfile: Dockerfile
     container_name: api-mock-frontend
     ports:
