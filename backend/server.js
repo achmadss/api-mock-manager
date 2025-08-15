@@ -107,7 +107,7 @@ app.post('/api/_manage/endpoints', (req, res) => {
 
   // Validate JSON body
   try {
-    if (!body) {
+    if (body != "") {
       JSON.parse(body);
     }
   } catch (e) {
