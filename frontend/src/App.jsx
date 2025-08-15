@@ -29,7 +29,7 @@ const APIMockManager = () => {
   const loadEndpoints = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/_manage/endpoints`);
+      const response = await fetch(`${API_BASE_URL}/api/_manage/endpoints`);
       if (response.ok) {
         const data = await response.json();
         setEndpoints(data);
@@ -112,8 +112,8 @@ const APIMockManager = () => {
     setLoading(true);
     try {
       const url = editingEndpoint 
-        ? `/api/_manage/endpoints/${editingEndpoint}`
-        : `/api/_manage/endpoints`;
+        ? `${API_BASE_URL}/api/_manage/endpoints/${editingEndpoint}`
+        : `${API_BASE_URL}/api/_manage/endpoints`;
 
       const method = editingEndpoint ? 'PUT' : 'POST';
 
@@ -144,7 +144,7 @@ const APIMockManager = () => {
     if (confirm('Are you sure you want to delete this endpoint?')) {
       setLoading(true);
       try {
-        const response = await fetch(`/api/_manage/endpoints/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/_manage/endpoints/${id}`, {
           method: 'DELETE'
         });
 
@@ -342,7 +342,7 @@ const APIMockManager = () => {
                     type="text"
                     value={currentEndpoint.path}
                     onChange={(e) => setCurrentEndpoint({ ...currentEndpoint, path: e.target.value })}
-                    placeholder="/api/users?limit=10"
+                    placeholder="${API_BASE_URL}/api/users?limit=10"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
                   />
                 </div>
