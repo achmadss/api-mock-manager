@@ -161,16 +161,6 @@ npm run dev   # nodemon (auto-reload)
 
 ---
 
-## Troubleshooting & tips
-
-- **Empty/incorrect sqlite mount**: If you forgot to `touch backend/api_mocks.db` before `docker-compose up`, Docker may create a directory at that path on some platforms. Create the file first to avoid that.
-- **CORS issues**: Backend has `cors()` enabled. If you change ports/hosts, CORS should still allow frontend requests.
-- **If frontend shows stale data**: clear browser cache or hard refresh; the built static files are served by nginx.
-- **To use Docker service name**: when frontend and backend are in the same Compose network, `http://backend:3001` is the simplest API_BASE_URL.
-- **Seeding data**: If you want example mock endpoints pre-populated, I can add a small seed script that runs on container start if `api_mocks.db` is empty.
-
----
-
 ## Example `docker-compose.yml` (reference)
 
 ```yaml

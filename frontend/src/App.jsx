@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, Save, X, Code, Copy, ExternalLink } from 'lucide-react';
 
-const hostname = window.location.hostname;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const APIMockManager = () => {
   const [endpoints, setEndpoints] = useState([]);
@@ -164,7 +164,7 @@ const APIMockManager = () => {
   };
 
   const copyEndpointURL = async (endpoint) => {
-    const url = `${endpoint.path}`;
+    const url = `${API_BASE_URL}${endpoint.path}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopySuccess(endpoint.id);
@@ -182,7 +182,7 @@ const APIMockManager = () => {
   };
 
   const testEndpoint = async (endpoint) => {
-    const url = `${endpoint.path}`;
+    const url = `${API_BASE_URL}${endpoint.path}`;
     window.open(url, '_blank');
   };
 
@@ -265,7 +265,7 @@ const APIMockManager = () => {
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm text-gray-600">Mock URL:</span>
                           <code className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded font-mono">
-                            {hostname}{endpoint.path}
+                            {API_BASE_URL}{endpoint.path}
                           </code>
                         </div>
                         <div className="mt-3">

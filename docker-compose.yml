@@ -13,6 +13,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args: 
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
       dockerfile: Dockerfile
     container_name: api-mock-frontend
     ports:
