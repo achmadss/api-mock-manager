@@ -147,7 +147,7 @@ app.put('/api/_manage/endpoints/:id', (req, res) => {
   const { id } = req.params;
   const { path: endpointPath, method, statusCode, body } = req.body;
 
-  if (!endpointPath || !method || !statusCode || !body) {
+  if (!endpointPath || !method || !statusCode) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 

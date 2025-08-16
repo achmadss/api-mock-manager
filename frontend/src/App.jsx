@@ -100,45 +100,67 @@ const APIMockManager = () => {
   };
 
   const saveEndpoint = async () => {
-    if (!currentEndpoint.path.trim()) {
-      alert('Path is required');
-      return;
+  let path = currentEndpoint.path.trim();
+
+  if (!path) {
+    alert('Path is required');
+    return;
+  }
+
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+
+  const duplicate = endpoints.find(
+    (ep) =>
+      ep.path === path &&
+      ep.method === currentEndpoint.method &&
+      ep.id !== editingEndpoint // allow updating same endpoint
+  );
+
+  if (duplicate) {
+    alert(`Endpoint with ${currentEndpoint.method} ${path} already exists`);
+    return;
+  }
+
+  if (!validateJSON(currentEndpoint.body)) {
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const url = editingEndpoint 
+      ? `${API_BASE_URL}/api/_manage/endpoints/${editingEndpoint}`
+      : `${API_BASE_URL}/api/_manage/endpoints`;
+
+    const method = editingEndpoint ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...currentEndpoint,
+        path, // ✅ use validated path
+      }),
+    });
+
+    if (response.ok) {
+      await loadEndpoints();
+      closeModal();
+    } else {
+      const error = await response.json();
+      alert(`Error: ${error.error}`);
     }
+  } catch (error) {
+    console.error('Error saving endpoint:', error);
+    alert('Failed to save endpoint');
+  } finally {
+    setLoading(false);
+  }
+};
 
-    if (!validateJSON(currentEndpoint.body)) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const url = editingEndpoint 
-        ? `${API_BASE_URL}/api/_manage/endpoints/${editingEndpoint}`
-        : `${API_BASE_URL}/api/_manage/endpoints`;
-
-      const method = editingEndpoint ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(currentEndpoint)
-      });
-
-      if (response.ok) {
-        await loadEndpoints();
-        closeModal();
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error saving endpoint:', error);
-      alert('Failed to save endpoint');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const deleteEndpoint = async (id) => {
     if (confirm('Are you sure you want to delete this endpoint?')) {
