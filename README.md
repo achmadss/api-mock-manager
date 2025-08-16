@@ -68,7 +68,7 @@ npm start
 # or development with auto-reload (nodemon)
 npm run dev
 ```
-The server listens on `process.env.PORT || 3001`. By default: `http://localhost:3001`.
+The server listens on port `3001`.
 
 ### Frontend
 1. Install:
@@ -127,8 +127,8 @@ From repository root (where `docker-compose.yml` sits):
 ```bash
 docker-compose up --build
 ```
-- Frontend (host): `http://localhost:3001` (default)
-- Backend API (host): `http://localhost:3000` → forwards to container `3001`
+- Frontend (host): `http://localhost:3000` (default)
+- Backend API (host): `http://localhost:3001` → forwards to container `3001`
 
 ### Stopping and restarting
 To stop:
@@ -139,63 +139,3 @@ To rebuild after source changes:
 ```bash
 docker-compose up --build
 ```
-
----
-
-## Development with hot reload (recommended for active development)
-
-The Dockerfiles in this archive are production-oriented (build static frontend). For development you can run locally without Docker:
-
-- Frontend:
-```bash
-cd frontend
-REACT_APP_API_BASE_URL=http://localhost:3001 npm start
-```
-
-- Backend:
-```bash
-cd backend
-npm install
-npm run dev   # nodemon (auto-reload)
-```
-
----
-
-## Example `docker-compose.yml` (reference)
-
-```yaml
-version: "3.8"
-
-services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: api-mock-backend
-    ports:
-      - "${BACKEND_PORT:-3001}:3001"
-    volumes:
-      - ./backend/api_mocks.db:/app/api_mocks.db
-    restart: unless-stopped
-    environment:
-      - PORT=3001
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: api-mock-frontend
-    ports:
-      - "${FRONTEND_PORT:-3000}:80"
-    restart: unless-stopped
-    environment:
-      - REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL:-http://backend:3001}
-```
-
----
-
-## Security considerations
-
-- SQLite is fine for local/dev usage. For larger or multi-instance production, consider a centralized DB.
-- If exposing to the public internet, secure the frontend/backend with HTTPS (reverse proxy like Traefik or nginx with certificates), authentication, and backups for the `api_mocks.db` file.
-- Validate and sanitize saved response bodies if you plan to run untrusted content.
