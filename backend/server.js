@@ -11,6 +11,16 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+app.set('etag', false);
+
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Database setup
 const dbPath = path.join(__dirname, 'api_mocks.db');
 const db = new sqlite3.Database(dbPath);
