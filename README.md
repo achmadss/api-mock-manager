@@ -2,7 +2,7 @@
 
 A full-stack application for creating and managing API mocks.
 
-![Screenshot](screenshots/image.png)
+![Screenshot](assets/image.png)
 
 ## Features
 
