@@ -13,9 +13,11 @@ const APIMockManager = () => {
     path: '',
     method: 'GET',
     statusCode: 200,
-    body: ''
+    body: '',
+    headers: []
   });
   const [jsonError, setJsonError] = useState('');
+  const [headerErrors, setHeaderErrors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState('');
 
@@ -75,10 +77,26 @@ const APIMockManager = () => {
     }
   };
 
+  const validateHeaders = () => {
+    const errors = currentEndpoint.headers.map(header => {
+      if (!header.key.trim()) {
+        return 'Header name is required.';
+      }
+      return '';
+    });
+    setHeaderErrors(errors);
+    return !errors.some(error => error);
+  };
+
   const openModal = (endpoint = null) => {
     if (endpoint) {
       setEditingEndpoint(endpoint.id);
-      setCurrentEndpoint({ ...endpoint });
+      const headers = endpoint.headers ? Object.entries(endpoint.headers).map(([key, value]) => ({ key, value: String(value) })) : [];
+      setCurrentEndpoint({
+        ...endpoint,
+        headers,
+      });
+      setHeaderErrors(new Array(headers.length).fill(''));
     } else {
       setEditingEndpoint(null);
       setCurrentEndpoint({
@@ -86,8 +104,10 @@ const APIMockManager = () => {
         path: '',
         method: 'GET',
         statusCode: 200,
-        body: ''
+        body: '',
+        headers: []
       });
+      setHeaderErrors([]);
     }
     setJsonError('');
     setIsModalOpen(true);
@@ -97,70 +117,105 @@ const APIMockManager = () => {
     setIsModalOpen(false);
     setEditingEndpoint(null);
     setJsonError('');
+    setHeaderErrors([]);
+  };
+
+  const handleHeaderChange = (index, field, value) => {
+    const newHeaders = [...currentEndpoint.headers];
+    newHeaders[index][field] = value;
+    setCurrentEndpoint({ ...currentEndpoint, headers: newHeaders });
+
+    if (field === 'key') {
+      const newErrors = [...headerErrors];
+      newErrors[index] = value.trim() ? '' : 'Header name is required.';
+      setHeaderErrors(newErrors);
+    }
+  };
+
+  const addHeader = () => {
+    setCurrentEndpoint({
+      ...currentEndpoint,
+      headers: [...currentEndpoint.headers, { key: '', value: '' }],
+    });
+    setHeaderErrors([...headerErrors, '']);
+  };
+
+  const removeHeader = (index) => {
+    const newHeaders = currentEndpoint.headers.filter((_, i) => i !== index);
+    const newErrors = headerErrors.filter((_, i) => i !== index);
+    setCurrentEndpoint({ ...currentEndpoint, headers: newHeaders });
+    setHeaderErrors(newErrors);
   };
 
   const saveEndpoint = async () => {
-  let path = currentEndpoint.path.trim();
+    let path = currentEndpoint.path.trim();
 
-  if (!path) {
-    alert('Path is required');
-    return;
-  }
-
-  if (!path.startsWith('/')) {
-    path = '/' + path;
-  }
-
-  const duplicate = endpoints.find(
-    (ep) =>
-      ep.path === path &&
-      ep.method === currentEndpoint.method &&
-      ep.id !== editingEndpoint // allow updating same endpoint
-  );
-
-  if (duplicate) {
-    alert(`Endpoint with ${currentEndpoint.method} ${path} already exists`);
-    return;
-  }
-
-  if (!validateJSON(currentEndpoint.body)) {
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const url = editingEndpoint 
-      ? `${API_BASE_URL}/api/_manage/endpoints/${editingEndpoint}`
-      : `${API_BASE_URL}/api/_manage/endpoints`;
-
-    const method = editingEndpoint ? 'PUT' : 'POST';
-
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...currentEndpoint,
-        path, // ✅ use validated path
-      }),
-    });
-
-    if (response.ok) {
-      await loadEndpoints();
-      closeModal();
-    } else {
-      const error = await response.json();
-      alert(`Error: ${error.error}`);
+    if (!path) {
+      alert('Path is required');
+      return;
     }
-  } catch (error) {
-    console.error('Error saving endpoint:', error);
-    alert('Failed to save endpoint');
-  } finally {
-    setLoading(false);
-  }
-};
 
+    if (!path.startsWith('/')) {
+      path = '/' + path;
+    }
+
+    const duplicate = endpoints.find(
+      (ep) =>
+        ep.path === path &&
+        ep.method === currentEndpoint.method &&
+        ep.id !== editingEndpoint // allow updating same endpoint
+    );
+
+    if (duplicate) {
+      alert(`Endpoint with ${currentEndpoint.method} ${path} already exists`);
+      return;
+    }
+
+    if (!validateJSON(currentEndpoint.body) || !validateHeaders()) {
+      return;
+    }
+
+    const headersObject = currentEndpoint.headers.reduce((acc, header) => {
+      if (header.key.trim()) {
+        acc[header.key.trim()] = header.value;
+      }
+      return acc;
+    }, {});
+
+    setLoading(true);
+    try {
+      const url = editingEndpoint
+        ? `${API_BASE_URL}/api/_manage/endpoints/${editingEndpoint}`
+        : `${API_BASE_URL}/api/_manage/endpoints`;
+
+      const method = editingEndpoint ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...currentEndpoint,
+          path, // ✅ use validated path
+          headers: headersObject,
+        }),
+      });
+
+      if (response.ok) {
+        await loadEndpoints();
+        closeModal();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving endpoint:', error);
+      alert('Failed to save endpoint');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const deleteEndpoint = async (id) => {
     if (confirm('Are you sure you want to delete this endpoint?')) {
@@ -290,17 +345,34 @@ const APIMockManager = () => {
                             {API_BASE_URL}{endpoint.path}
                           </code>
                         </div>
-                        <div className="mt-3">
-                          <details className="group">
-                            <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
-                              <Code size={16} />&nbsp;
-                              Response Body
-                            </summary>
-                            <pre className="mt-2 p-3 bg-gray-900 text-green-400 text-sm rounded overflow-x-auto max-h-40 overflow-y-auto">
-                              {endpoint.body}
-                            </pre>
-                          </details>
-                        </div>
+                        {
+                          endpoint.body !== '' && (
+                            <div className="mt-3">
+                              <details className="group">
+                                <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
+                                  <Code size={16} />&nbsp;
+                                  Response Body
+                                </summary>
+                                <pre className="mt-2 p-3 bg-gray-900 text-green-400 text-sm rounded overflow-x-auto max-h-40 overflow-y-auto">
+                                  {endpoint.body}
+                                </pre>
+                              </details>
+                            </div>
+                          )}
+                        {
+                          endpoint.headers && Object.keys(endpoint.headers).length > 0 && (
+                            <div className="mt-2">
+                              <details className="group">
+                                <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
+                                  <Code size={16} />&nbsp;
+                                Response Headers
+                                </summary>
+                              <pre className="mt-2 p-3 bg-gray-900 text-yellow-400 text-sm rounded overflow-x-auto max-h-40 overflow-y-auto">
+                                {Object.entries(endpoint.headers).map(([key, value]) => `${key}: ${value}`).join('\n')}
+                              </pre>
+                            </details>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 ml-4">
                         <button
@@ -419,13 +491,60 @@ const APIMockManager = () => {
                       setCurrentEndpoint({ ...currentEndpoint, body: e.target.value });
                       validateJSON(e.target.value);
                     }}
-                    rows={12}
+                    rows={8}
                     className={`w-full px-3 py-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y ${jsonError ? 'border-red-300' : 'border-gray-300'}`}
                     placeholder=''
                   />
                   {jsonError && (
                     <p className="mt-1 text-sm text-red-600">{jsonError}</p>
                   )}
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Response Headers
+                    </label>
+                    <button
+                      onClick={addHeader}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                    >
+                      <Plus size={14} /> Add Header
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {currentEndpoint.headers.map((header, index) => (
+                      <div key={index}>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Header Name"
+                            value={header.key}
+                            onChange={(e) => handleHeaderChange(index, 'key', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg font-mono text-sm ${headerErrors[index] ? 'border-red-300' : 'border-gray-300'}`}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Header Value"
+                            value={header.value}
+                            onChange={(e) => handleHeaderChange(index, 'value', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                          />
+                          <button
+                            onClick={() => removeHeader(index)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete header"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        {headerErrors[index] && <p className="mt-1 text-sm text-red-600">{headerErrors[index]}</p>}
+                      </div>
+                    ))}
+                    {currentEndpoint.headers.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-2">No custom headers.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

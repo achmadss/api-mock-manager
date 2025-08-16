@@ -34,6 +34,7 @@ db.serialize(() => {
       method TEXT NOT NULL,
       status_code INTEGER NOT NULL,
       response_body TEXT NOT NULL,
+      headers TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -44,6 +45,23 @@ db.serialize(() => {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_path_method 
     ON mock_endpoints(path, method)
   `);
+
+  // Migration: Add headers column if it doesn't exist
+  db.all("PRAGMA table_info(mock_endpoints)", (err, columns) => {
+    if (err) {
+      console.error("Error checking table info:", err.message);
+      return;
+    }
+
+    const hasHeadersColumn = columns.some(col => col.name === 'headers');
+    if (!hasHeadersColumn) {
+      db.run('ALTER TABLE mock_endpoints ADD COLUMN headers TEXT', (err) => {
+        if (err) {
+          console.error('Error adding headers column:', err.message);
+        }
+      });
+    }
+  });
 });
 
 // Helper function to parse query parameters from path
@@ -98,6 +116,7 @@ app.get('/api/_manage/endpoints', (req, res) => {
         method: row.method,
         statusCode: row.status_code,
         body: row.response_body,
+        headers: row.headers ? JSON.parse(row.headers) : null,
         createdAt: row.created_at,
         updatedAt: row.updated_at
       }));
@@ -109,7 +128,7 @@ app.get('/api/_manage/endpoints', (req, res) => {
 
 // Create endpoint
 app.post('/api/_manage/endpoints', (req, res) => {
-  const { path: endpointPath, method, statusCode, body } = req.body;
+  const { path: endpointPath, method, statusCode, body, headers } = req.body;
 
   if (!endpointPath || !method || !statusCode) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -126,11 +145,12 @@ app.post('/api/_manage/endpoints', (req, res) => {
 
   const id = uuidv4();
   const now = new Date().toISOString();
+  const headersString = headers ? JSON.stringify(headers) : null;
 
   db.run(
-    `INSERT INTO mock_endpoints (id, path, method, status_code, response_body, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, endpointPath, method.toUpperCase(), statusCode, body, now, now],
+    `INSERT INTO mock_endpoints (id, path, method, status_code, response_body, headers, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+    [id, endpointPath, method.toUpperCase(), statusCode, body, headersString, now, now],
     function(err) {
       if (err) {
         if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -145,6 +165,7 @@ app.post('/api/_manage/endpoints', (req, res) => {
         method: method.toUpperCase(),
         statusCode,
         body,
+        headers: headers || null,
         createdAt: now,
         updatedAt: now
       });
@@ -155,7 +176,7 @@ app.post('/api/_manage/endpoints', (req, res) => {
 // Update endpoint
 app.put('/api/_manage/endpoints/:id', (req, res) => {
   const { id } = req.params;
-  const { path: endpointPath, method, statusCode, body } = req.body;
+  const { path: endpointPath, method, statusCode, body, headers } = req.body;
 
   if (!endpointPath || !method || !statusCode) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -171,12 +192,13 @@ app.put('/api/_manage/endpoints/:id', (req, res) => {
   }
 
   const now = new Date().toISOString();
+  const headersString = headers ? JSON.stringify(headers) : null;
 
   db.run(
     `UPDATE mock_endpoints 
-     SET path = ?, method = ?, status_code = ?, response_body = ?, updated_at = ?
+     SET path = ?, method = ?, status_code = ?, response_body = ?, headers = ?, updated_at = ?
      WHERE id = ?`,
-    [endpointPath, method.toUpperCase(), statusCode, body, now, id],
+    [endpointPath, method.toUpperCase(), statusCode, body, headersString, now, id],
     function(err) {
       if (err) {
         if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -195,6 +217,7 @@ app.put('/api/_manage/endpoints/:id', (req, res) => {
         method: method.toUpperCase(),
         statusCode,
         body,
+        headers: headers || null,
         updatedAt: now
       });
     }
@@ -245,11 +268,23 @@ app.all('*', (req, res) => {
       );
 
       if (!matchingEndpoint) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           error: 'Mock endpoint not found',
           path: requestPath,
           method: requestMethod
         });
+      }
+
+      // Set headers from the mock endpoint
+      if (matchingEndpoint.headers) {
+        try {
+          const headers = JSON.parse(matchingEndpoint.headers);
+          for (const [key, value] of Object.entries(headers)) {
+            res.setHeader(key, String(value));
+          }
+        } catch (e) {
+          console.error(`Error parsing headers for endpoint ${matchingEndpoint.id}:`, e);
+        }
       }
 
       // Parse and return the mock response
