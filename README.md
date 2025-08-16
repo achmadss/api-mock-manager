@@ -2,6 +2,8 @@
 
 A full-stack application for creating and managing API mocks.
 
+![Screenshot](screenshots/image.png)
+
 ## Features
 
 ### Frontend (React)
@@ -52,7 +54,7 @@ api-mock-manager/
 
 ---
 
-## Local (non-docker) setup — quick start
+## Local setup
 
 ### Backend
 1. Install
@@ -83,43 +85,26 @@ Open `http://localhost:3000`. for Docker deployment, see instructions below.
 
 ---
 
-## Usage (app behavior)
+## Docker
 
-1. Open frontend in browser.
-2. Click **New Endpoint**:
-   - Set path (e.g. `/api/users?limit=10`)
-   - Choose method (GET, POST, etc.)
-   - Choose status code (200, 404, 500, ...)
-   - Enter JSON response body (Format / validate with the button)
-3. Save. The frontend calls management API:
-```
-GET/POST/PUT/DELETE  {API_BASE_URL}/api/_manage/endpoints
-```
-4. Created mock endpoints are then available at:
-```
-{API_BASE_URL}{your_path}
-```
-E.g. `GET http://localhost:3001/api/users`
-
----
-
-## Docker deployment
-
-### Behavior & defaults
-- **Backend (inside container)** listens on port `3001`.
-- **Frontend** is an nginx static server that serves the built React app on container port `80`.
-- **Host port mappings by default**:
-  - `BACKEND_PORT` (host) → container `3001`
-  - `FRONTEND_PORT` (host) → container `80`
-  - These defaults are implemented via variable substitution in `docker-compose.yml`:
-    - backend: `"${BACKEND_PORT:-3001}:3001"`
-    - frontend: `"${FRONTEND_PORT:-3000}:80"`
-
-### Prepare the SQLite file (important)
+### Prepare the SQLite file
 Before `docker-compose up` create an empty sqlite file to ensure the bind mount is a file, not a directory:
 ```bash
 mkdir -p backend
 touch backend/api_mocks.db
+```
+
+### Setup environment
+1. Create `.env` file from the `.env.example`:
+```bash
+mv .env.example .env
+```
+
+2. If you change the `BACKEND_PORT`, make sure to also match `VITE_API_BASE_URL` with the `BACKEND_PORT`.
+```env
+BACKEND_PORT=3001
+FRONTEND_PORT=3000
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
 ### Build & start (default)
@@ -127,8 +112,6 @@ From repository root (where `docker-compose.yml` sits):
 ```bash
 docker-compose up --build
 ```
-- Frontend (host): `http://localhost:3000` (default)
-- Backend API (host): `http://localhost:3001` → forwards to container `3001`
 
 ### Stopping and restarting
 To stop:
