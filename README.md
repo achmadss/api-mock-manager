@@ -79,9 +79,9 @@ npm install
 ```
 2. Start:
 ```bash
-npm start
+npm run dev
 ```
-Open `http://localhost:3000`. for Docker deployment, see instructions below.
+Open `http://localhost:3000`
 
 ---
 
@@ -90,14 +90,13 @@ Open `http://localhost:3000`. for Docker deployment, see instructions below.
 ### Prepare the SQLite file
 Before `docker-compose up` create an empty sqlite file to ensure the bind mount is a file, not a directory:
 ```bash
-mkdir -p backend
 touch backend/api_mocks.db
 ```
 
 ### Setup environment
 1. Create `.env` file from the `.env.example`:
 ```bash
-mv .env.example .env
+cp .env.example .env
 ```
 
 2. If you change the `BACKEND_PORT`, make sure to also match `VITE_API_BASE_URL` with the `BACKEND_PORT`.
