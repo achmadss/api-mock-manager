@@ -106,7 +106,7 @@ FRONTEND_PORT=3000
 VITE_API_BASE_URL=http://localhost:3001
 ```
 
-### Build & start (default)
+### Build & start
 From repository root (where `docker-compose.yml` sits):
 ```bash
 docker-compose up --build
